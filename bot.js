@@ -1,24 +1,22 @@
-﻿// cd Documents -> cd discordjsbot
-// run using node ./src/bot.js
 
 require('dotenv').config();
 
 const Discord = require('discord.js');
 
-const intents = new Discord.Intents(32767);
+const intents = new Discord.Intents(32767); // give bot permissions
 
-const client = new Discord.Client({intents});
+const client = new Discord.Client({ intents }, { partials: ['MESSAGE', 'CHANNEL', 'REACT'] }); // make client with partials 
 
 const prefix = "$";
 
 //const client = new Discord.Client({ intents: ["GUILD_MESSAGES"] });
 
-client.on('ready', () => {
+client.on('ready', () => {       // put input in the console when bot is logged in
     console.log(`${client.user.tag} has logged in`);
 });
 
-client.on('messageCreate', msg => {
-    if (msg.author.bot) {
+client.on('messageCreate', msg => { // when someone sends message in channel, bot responds
+    if (msg.author.bot) {           // ignore all bot messages in channel
         return;
     }
     if (msg.content.startsWith(prefix)) {
@@ -29,7 +27,7 @@ client.on('messageCreate', msg => {
                 msg.channel.send('Incorrect format, use $griefme');
                 return;
             }
-            msg.author.send(process.env.GRIEFPASTA);
+            msg.author.send(process.env.COPYPASTA);
         }
         else if (command == 'ethan') {
             if (args.length != 0) {
@@ -152,8 +150,7 @@ client.on('messageCreate', msg => {
     
 });
 
-client.ws.on('INTERACTION_CREATE', async interaction => {
-    console.log('works');
+client.ws.on('INTERACTION_CREATE', async interaction => {  // detect slash commands
     if (!interaction.isCommand()) {
         return;
     }
@@ -163,4 +160,28 @@ client.ws.on('INTERACTION_CREATE', async interaction => {
     console.log(interaction);
 });
 
-client.login(process.env.TOKEN);
+client.on("messageReactionAdd", (reaction, user) => {  // assign roles to members who react to a certain comment
+    const { emojiName } = reaction.emoji;
+    const member = reaction.message.guild.members.cache.get(user.id);
+    if (reaction.message.id === process.env.REACTIONMSGID) {
+        if (emojiName == '🎱') {
+            member.roles.add(process.env.BILLIARDSROLE);
+        }
+        else if (emojiName == '🎳')
+            member.roles.add(process.env.BOWLINGROLE);
+    }
+});
+
+client.on("messageReactionRemove", (reaction, user) => {  // remove roles for users who unreact to the specific message
+    const { emojiName } = reaction.emoji;
+    const member = reaction.message.guild.members.cache.get(user.id);
+    if (reaction.message.id === process.env.REACTIONMSGID) {
+        if (emojiName == '🎱') {
+            member.roles.remove(process.env.BILLIARDSROLE);
+        }
+        else if (emojiName == '🎳')
+            member.roles.remove(process.env.BOWLINGROLE);
+    }
+});
+
+client.login(process.env.TOKEN); // login the bot
